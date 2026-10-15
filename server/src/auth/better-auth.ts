@@ -182,6 +182,26 @@ export function resolveWorkspaceHandoffIdentity(
   };
 }
 
+// hconsulting patch: "Sign in with Google" for accounts that already exist.
+// disableSignUp blocks new users even when the client sends requestSignUp.
+export function buildGoogleSignInOptions(env: NodeJS.ProcessEnv, publicUrl: string | undefined) {
+  const clientId = env.PAPERCLIP_GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = env.PAPERCLIP_GOOGLE_CLIENT_SECRET?.trim();
+  if (!clientId || !clientSecret) return {};
+  return {
+    socialProviders: {
+      google: {
+        clientId,
+        clientSecret,
+        disableSignUp: true,
+        prompt: "select_account" as const,
+        ...(publicUrl ? { redirectURI: `${publicUrl.replace(/\/+$/, "")}/api/auth/callback/google` } : {}),
+      },
+    },
+    account: { accountLinking: { enabled: true, trustedProviders: ["google"] } },
+  };
+}
+
 export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins: string[]): BetterAuthInstance {
   const baseUrl = config.authBaseUrlMode === "explicit" ? config.authPublicBaseUrl : undefined;
   const publicUrl = process.env.PAPERCLIP_PUBLIC_URL?.trim() || baseUrl;
@@ -218,6 +238,7 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins:
       requireEmailVerification: false,
       disableSignUp: config.authDisableSignUp,
     },
+    ...buildGoogleSignInOptions(process.env, publicUrl),
     rateLimit: buildBetterAuthRateLimitOptions({
       deploymentMode: config.deploymentMode,
       deploymentExposure: config.deploymentExposure,

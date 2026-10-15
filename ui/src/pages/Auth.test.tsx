@@ -11,12 +11,14 @@ import { AuthPage } from "./Auth";
 const getSessionMock = vi.hoisted(() => vi.fn());
 const signInEmailMock = vi.hoisted(() => vi.fn());
 const signUpEmailMock = vi.hoisted(() => vi.fn());
+const signInGoogleMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../api/auth", () => ({
   authApi: {
     getSession: () => getSessionMock(),
     signInEmail: (input: unknown) => signInEmailMock(input),
     signUpEmail: (input: unknown) => signUpEmailMock(input),
+    signInGoogle: (input: unknown) => signInGoogleMock(input),
   },
 }));
 
@@ -252,5 +254,16 @@ describe("AuthPage", () => {
     await act(async () => {
       root.unmount();
     });
+  });
+  it("starts Google sign-in back to the requested page", async () => {
+    signInGoogleMock.mockResolvedValue(undefined);
+    const { root } = await mount();
+    const button = Array.from(container.querySelectorAll("button")).find((b) => b.textContent === "Continue with Google");
+    expect(button).toBeDefined();
+    await act(async () => {
+      button!.click();
+    });
+    expect(signInGoogleMock).toHaveBeenCalledWith({ callbackURL: "/", errorCallbackURL: "/auth" });
+    await act(async () => root.unmount());
   });
 });

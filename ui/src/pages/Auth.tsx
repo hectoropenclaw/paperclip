@@ -20,7 +20,10 @@ export function AuthPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [searchParamsError] = useState(() =>
+    searchParams.get("error") ? "Google sign-in failed: that account has no access to this instance." : null,
+  );
+  const [error, setError] = useState<string | null>(searchParamsError);
   const errorId = "auth-error";
 
   const nextPath = useMemo(
@@ -184,6 +187,23 @@ export function AuthPage() {
                   : "Create Account"}
             </Button>
           </form>
+
+          {mode === "sign_in" && (
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-3 w-full"
+              disabled={mutation.isPending}
+              onClick={() => {
+                setError(null);
+                authApi
+                  .signInGoogle({ callbackURL: nextPath, errorCallbackURL: "/auth" })
+                  .catch((err) => setError(err instanceof Error ? err.message : "Google sign-in failed"));
+              }}
+            >
+              Continue with Google
+            </Button>
+          )}
 
           <div className="mt-5 text-sm text-muted-foreground">
             {mode === "sign_in" ? "Need an account?" : "Already have an account?"}{" "}

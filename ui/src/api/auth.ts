@@ -166,6 +166,13 @@ export const authApi = {
     await authPost("/sign-in/email", input);
   },
 
+  // hconsulting patch: Google sign-in; the server only allows existing accounts.
+  signInGoogle: async (input: { callbackURL: string; errorCallbackURL: string }) => {
+    const payload = (await authPost("/sign-in/social", { provider: "google", ...input })) as { url?: unknown } | null;
+    if (typeof payload?.url !== "string") throw new Error("Google sign-in did not return a URL");
+    window.location.assign(payload.url);
+  },
+
   signUpEmail: async (input: { name: string; email: string; password: string }) => {
     await authPost("/sign-up/email", input);
   },
